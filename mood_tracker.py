@@ -2,10 +2,13 @@ import streamlit as st
 import datetime
 import json
 import os
+from datetime import datetime, timedelta
 
+# Helper function to create selection icons
 def create_selection(value, max_value, icon):
     return icon * value + "⚪" * (max_value - value)
 
+# Load mood data from JSON file
 def load_mood_data():
     try:
         if os.path.exists('mood_data.json'):
@@ -16,7 +19,6 @@ def load_mood_data():
                 return json.loads(content)
         return []
     except json.JSONDecodeError:
-        # If file is corrupted, delete it and return empty list
         if os.path.exists('mood_data.json'):
             os.remove('mood_data.json')
         return []
@@ -24,6 +26,7 @@ def load_mood_data():
         st.error(f"Error loading mood data: {e}")
         return []
 
+# Save mood data to JSON file
 def save_mood_data(data):
     try:
         with open('mood_data.json', 'w') as f:
@@ -31,17 +34,18 @@ def save_mood_data(data):
     except Exception as e:
         st.error(f"Error saving mood data: {e}")
 
+# Clear mood history
 def clear_mood_history():
     try:
         if os.path.exists('mood_data.json'):
             os.remove('mood_data.json')
         st.session_state.clear()
-        # Create a completely empty data structure
         save_mood_data([])
         st.success("Mood history cleared successfully! ✨")
     except Exception as e:
         st.error(f"Error clearing mood history: {e}")
 
+# Update mood in session state
 def update_mood():
     mood_data = load_mood_data()
     if mood_data:
@@ -50,105 +54,64 @@ def update_mood():
 
 # Mood Tracker Page
 def mood_tracker_page():
-    # Initialize session state for mood if it doesn't exist
     if 'mood_radio' not in st.session_state:
         st.session_state.mood_radio = "😐 Meh"
 
-    st.markdown(
-        """
-        <style>
-            body {
-                background-color: #1a1a1a;
-                color: #ffffff;
-                font-family: 'Arial', sans-serif;
-            }
-            .mood-option {
-                background-color: #2d2d2d;
-                border: 2px solid #404040;
-                border-radius: 10px;
-                padding: 20px;
-                margin: 10px 0;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-            .mood-option:hover {
-                border-color: #2563eb;
-                transform: translateY(-2px);
-            }
-            .mood-option.selected {
-                background-color: #1e3a8a;
-                border-color: #2563eb;
-            }
-            .stButton>button {
-                background-color: #2563eb;
-                color: white;
-                border-radius: 10px;
-                padding: 10px;
-                border: none;
-            }
-            .stButton>button:hover {
-                background-color: #1d4ed8;
-            }
-            .mood-history {
-                background-color: #2d2d2d;
-                border-radius: 10px;
-                padding: 15px;
-                margin: 10px 0;
-                border: 1px solid #404040;
-            }
-            /* Style for radio buttons */
-            .stRadio > div {
-                display: flex;
-                justify-content: space-between;
-                gap: 10px;
-            }
-            .stRadio > div > div {
-                flex: 1;
-                text-align: center;
-            }
-            .stRadio > div > div > div {
-                background-color: #2d2d2d;
-                border: 2px solid #404040;
-                border-radius: 10px;
-                padding: 20px;
-                margin: 10px 0;
-                transition: all 0.3s ease;
-            }
-            .stRadio > div > div > div:hover {
-                border-color: #2563eb;
-                transform: translateY(-2px);
-            }
-            .stRadio > div > div > div[data-testid="stRadio"] {
-                background-color: #1e3a8a;
-                border-color: #2563eb;
-            }
-            /* Style for clear history button */
-            .clear-history-btn {
-                background-color: #dc2626 !important;
-            }
-            .clear-history-btn:hover {
-                background-color: #b91c1c !important;
-            }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    st.title("📒 Mood Tracker Journal")
-
-    # Get the latest mood from chat data
     mood_data = load_mood_data()
 
-    # Mood selection using radio buttons with callback
+    # Mood Calendar Section
+    st.subheader("📅 Mood Calendar")
+    mood_colors = {
+        "😞 Bad": "#FFCCCB",
+        "😐 Meh": "#ADD8E6",
+        "😊 Good": "#FFB6C1",
+        "😄 Great": "#FFFF99",
+    }
+
+    today = datetime.today()
+    current_year = today.year
+    current_month = today.month
+
+    st.write(f"### {today.strftime('%B %Y')}")
+    first_day_of_month = datetime(current_year, current_month, 1)
+    num_days_in_month = (datetime(current_year, current_month + 1, 1) - timedelta(days=1)).day
+
+    # Calendar Grid
+    cols = st.columns(7)
+    for i, col in enumerate(cols):
+        col.write(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i])
+
+    day_counter = 1
+    for week in range(6):
+        cols = st.columns(7)
+        for i, col in enumerate(cols):
+            if (week == 0 and i < first_day_of_month.weekday()) or day_counter > num_days_in_month:
+                col.write("")
+            else:
+                date_str = datetime(current_year, current_month, day_counter).strftime("%Y-%m-%d")
+                mood_for_day = None
+                for entry in mood_data:
+                    if entry["date"].startswith(date_str):
+                        mood_for_day = entry["mood"]
+                        break
+
+                bg_color = mood_colors.get(mood_for_day, "#FFFFFF")
+                col.markdown(
+                    f'<div style="background-color: {bg_color}; border-radius: 5px; padding: 10px; text-align: center;">{day_counter}</div>',
+                    unsafe_allow_html=True
+                )
+                day_counter += 1
+
+    # Mood Selection
     st.radio(
         "How are you feeling?",
-        ["😊 Good", "😐 Meh", "😞 Bad"],
+        ["😞 Bad", "😐 Meh", "😊 Good", "😄 Great"],
         horizontal=True,
         key="mood_radio",
         on_change=update_mood
     )
 
-    # Stress, Water, Energy Inputs using selectable icons
+    # Metric Sliders
     st.write("**Stress Level:**")
     stress_level = st.select_slider(
         "Stress Level", 
@@ -173,11 +136,10 @@ def mood_tracker_page():
         format_func=lambda x: create_selection(x, 10, "🔋")
     )
 
-    # Submit Mood Entry
+    # Save Entry
     if st.button("Save Entry"):
-        # Create a new entry
         new_entry = {
-            "date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "mood": st.session_state.mood_radio,
             "stress": stress_level,
             "water": water_intake,
@@ -187,13 +149,13 @@ def mood_tracker_page():
         save_mood_data(mood_data)
         st.success("Mood logged successfully! ✅")
 
-    # Show Past Entries with improved styling
+    # History Section
     st.subheader("📊 Your Mood History")
     if mood_data:
-        for entry in reversed(mood_data[-5:]):  # Show last 5 entries
+        for entry in reversed(mood_data[-5:]):
             st.markdown(
                 f"""
-                <div class="mood-history">
+                <div style="background-color: #2d2d2d; border-radius: 10px; padding: 15px; margin: 10px 0; border: 1px solid #404040;">
                     <strong>{entry['date']}</strong><br>
                     Mood: {entry['mood']}<br>
                     ⚡{create_selection(entry['stress'], 10, '⚡')}<br>
@@ -206,8 +168,11 @@ def mood_tracker_page():
     else:
         st.write("No mood records yet. Start tracking today!")
 
-    # Add clear history button at the bottom
-    st.markdown("---")  # Add a separator line
-    if st.button("🗑️ Clear All History", key="clear_history", help="This will delete all your mood history and start fresh", use_container_width=True):
+    # Clear History
+    st.markdown("---")
+    if st.button("🗑️ Clear All History", key="clear_history"):
         clear_mood_history()
         st.rerun()
+
+if __name__ == "__main__":
+    mood_tracker_page()
