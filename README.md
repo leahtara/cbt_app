@@ -15,6 +15,11 @@ Now install the packages:<br>
 ```
 pip install -r requirements.txt
 ```
+Create a .env file for your api key. (Remember to replave 'YOUR_API_KEY' with your google ai studio api key<br>
+```
+touch .env 
+echo "GEMINI_API_KEY=YOUR_API_KEY"
+```
 Now run the code:<br>
 ```
 streamlit run app.py
