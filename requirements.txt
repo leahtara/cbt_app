@@ -1,3 +1,0 @@
-streamlit
-streamlit-option-menu
-google-genai
