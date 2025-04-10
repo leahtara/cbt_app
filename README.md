@@ -25,3 +25,13 @@ Now run the code:<br>
 streamlit run app.py
 ```
 <br>
+
+### Screenshots
+
+![image](https://github.com/user-attachments/assets/ee94c8e2-7bcc-48a4-86d0-3e6f2b25b673)
+
+![image](https://github.com/user-attachments/assets/8bddc9e9-794b-4e86-93f5-4ca44438ce21)
+
+![image](https://github.com/user-attachments/assets/1c704665-b625-420c-83e5-b6d8a6ec64ca)
+
+
